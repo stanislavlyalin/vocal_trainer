@@ -41,7 +41,11 @@ class Spectrogram(QWidget):
         super().__init__()
         self.data = np.zeros((300, FFT_SIZE // 2))
         self.pal = palette(np.array([[0, 0, 0, 0], [64, 2, 0, 101], [154, 255, 1, 0], [205, 255, 255, 0], [255, 255, 255, 255]]))
+        self.notes = [['C', 261.63], ['D', 293.66], ['E', 329.63], ['F', 349.23], ['G', 392.00], ['A', 440.00], ['B', 493.88]]
         
+    def freqToPx(self, frequency):
+        return frequency * self.width() / (SAMPLE_RATE / 2)
+
     def plot(self, data):
         self.data = np.vstack((self.data[1:,:], data))
         self.update()
@@ -54,6 +58,14 @@ class Spectrogram(QWidget):
         im = im.scaled(self.width(), self.height(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         p = QPainter(self)
         p.drawImage(0, 0, im)
+
+        # отрисовка нот
+        p.setPen(Qt.white)
+        for n in self.notes:
+            x = self.freqToPx(n[1])
+            p.drawLine(x, 30, x, self.height())
+            p.drawText(x-10, 0, 20, 20, Qt.AlignHCenter, n[0])
+
 
 CHUNK_SIZE = SAMPLE_RATE // LINES_PER_SECOND  # FFT_SIZE
 FORMAT = pyaudio.paInt16
@@ -81,7 +93,6 @@ class MainWindow(QWidget):
 
     def updateCoef(self, val):
         self.coef = val * 0.1
-        print(self.coef)
 
 
     def microphoneReader(self):
