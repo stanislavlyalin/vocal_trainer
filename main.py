@@ -9,23 +9,46 @@ import matplotlib.pyplot as plt
 import pyaudio
 from array import array
 from threading import Thread
+import struct
 
 SAMPLE_RATE = 4000
 LINES_PER_SECOND = 24
 FFT_SIZE = 2048
 
+def palette(points):
+    indexes = points[:, 0]
+    gradient_points = points[:, 1:]
+    channels = [[], [], []]
+
+    for point_idx in range(len(gradient_points) - 1):
+        fr_idx = point_idx
+        to_idx = point_idx + 1
+        steps = indexes[to_idx] - indexes[fr_idx]
+
+        for channel in range(3):
+            channels[channel] += list(
+                np.linspace(
+                    gradient_points[fr_idx, channel], gradient_points[to_idx, channel], steps, False, dtype=np.uint8))
+
+    pal = np.vstack((np.array(channels).T, gradient_points[-1, :]))
+    pal = np.array([int.from_bytes(struct.pack('BBB', *color), byteorder='big') for color in pal.astype(np.uint8)], dtype=np.int32)
+
+    return pal
+
+
 class Spectrogram(QWidget):
     def __init__(self):
         super().__init__()
         self.data = np.zeros((300, FFT_SIZE // 2))
+        self.pal = palette(np.array([[0, 0, 0, 0], [64, 2, 0, 101], [154, 255, 1, 0], [205, 255, 255, 0], [255, 255, 255, 255]]))
         
     def plot(self, data):
         self.data = np.vstack((self.data[1:,:], data))
         self.update()
 
     def paintEvent(self, event):
-        a = self.data.astype(np.uint8)
-        a = np.repeat(a, 4).reshape((300, FFT_SIZE // 2, 4))
+        a = list(self.data.astype(np.uint8))
+        a = self.pal[a]
 
         im = QImage(a, self.data.shape[1], self.data.shape[0], QImage.Format_RGB32)
         im = im.scaled(self.width(), self.height(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
