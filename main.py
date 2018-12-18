@@ -1,7 +1,7 @@
 # coding: utf-8
 import numpy as np
 import sys
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QPushButton, QSlider
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtGui import QPainter, QColor, QImage
 from PyQt5.QtCore import Qt
@@ -63,14 +63,26 @@ class MainWindow(QWidget):
         super().__init__()
         self.spectrogram = Spectrogram()
         self.startButton = QPushButton('Start')
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimum(10)
+        self.slider.setMaximum(50)
+        self.slider.setValue(10)
+        self.slider.valueChanged.connect(self.updateCoef)
+        self.coef = 1
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.spectrogram)
+        self.layout.addWidget(self.slider)
         self.layout.addWidget(self.startButton)
         self.setLayout(self.layout)
         self.recording = False
         self.buffer = np.zeros(FFT_SIZE)
 
         self.startButton.clicked.connect(self.clicked)
+
+    def updateCoef(self, val):
+        self.coef = val * 0.1
+        print(self.coef)
+
 
     def microphoneReader(self):
         while self.recording:
@@ -81,9 +93,10 @@ class MainWindow(QWidget):
                 self.buffer = np.hstack((self.buffer[len(self.data):], self.data))
 
                 sp = 10 * np.log10(np.abs(np.fft.rfft(self.buffer * np.hamming(len(self.buffer)))))[:FFT_SIZE // 2]
-                # sp = np.abs(np.fft.rfft(self.data))[:FFT_SIZE // 2]
-                sp += sp.min()
-                sp = np.clip(128 * sp / (sp.max() - sp.min()), 0, 255)
+                sp *= self.coef
+                sp -= sp.min()
+
+                sp = np.clip(sp, 0, 255)
                 self.spectrogram.plot(sp.astype(np.uint8))
 
 
