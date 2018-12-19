@@ -29,7 +29,8 @@ class Spectrogram(QWidget):
 
         # отрисовка нот
         p.setPen(Qt.white)
-        for i, note in enumerate(notes(4)):
-            x = freqToPx(note, self.width())
-            p.drawLine(x, 30, x, self.height())
-            p.drawText(x-10, 0, 20, 20, Qt.AlignHCenter, note_name(i))
+        for octave in range(2, 6):
+            for i, note in enumerate(notes(octave)):
+                x = freqToPx(note, self.width())
+                p.drawLine(x, 30, x, self.height())
+                p.drawText(x-10, 0, 20, 20, Qt.AlignHCenter, note_name(i))
