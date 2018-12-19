@@ -1,7 +1,7 @@
 # coding: utf-8
 import numpy as np
 from settings import SAMPLE_RATE, LINES_PER_SECOND, FFT_SIZE, CHUNK_SIZE
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSlider
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QSlider
 from PyQt5.QtCore import Qt
 from spectrogram import Spectrogram
 from recorder import Recorder
@@ -10,42 +10,46 @@ from recorder import Recorder
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+
         self.spectrogram = Spectrogram()
-        self.startButton = QPushButton('Start')
+
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(10)
         self.slider.setMaximum(50)
         self.slider.setValue(10)
         self.slider.valueChanged.connect(self.updateCoef)
-        self.coef = 1
+
+        self.startButton = QPushButton('Start')
+        self.startButton.clicked.connect(self.clicked)        
+
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.spectrogram)
         self.layout.addWidget(self.slider)
         self.layout.addWidget(self.startButton)
         self.setLayout(self.layout)
         
+        center = QApplication.desktop().availableGeometry().center()
+        width, height = 1500, 1000
+        self.setGeometry(center.x() - width // 2, center.y() - height // 2, width, height)
+
         self.buffer = np.zeros(FFT_SIZE)
-        self.setGeometry(200, 200, 500, 300)
-
+        self.coef = 1
+        
         self.recorder = Recorder(SAMPLE_RATE, CHUNK_SIZE, self.recorderData)
-
-        self.startButton.clicked.connect(self.clicked)
 
     def updateCoef(self, val):
         self.coef = val * 0.1
 
     def recorderData(self, data):
-
         if not np.any(np.isnan(data)):
-
             self.buffer = np.hstack((self.buffer[len(data):], data))
 
             sp = 10 * np.log10(np.abs(np.fft.rfft(self.buffer * np.hamming(len(self.buffer)))))[:FFT_SIZE // 2]
             sp *= self.coef
             sp -= sp.min()
 
-            sp = np.clip(sp, 0, 255)
-            self.spectrogram.plot(sp.astype(np.uint8))
+            sp = np.clip(sp, 0, 255).astype(np.uint8)
+            self.spectrogram.plot(sp)
 
 
     def clicked(self):
