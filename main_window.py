@@ -23,6 +23,7 @@ class MainWindow(QWidget):
         self.startButton.clicked.connect(self.clicked)        
 
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(2, 2, 2, 2)
         self.layout.addWidget(self.spectrogram)
         self.layout.addWidget(self.slider)
         self.layout.addWidget(self.startButton)

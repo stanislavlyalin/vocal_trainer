@@ -2,7 +2,7 @@
 import numpy as np
 from settings import FFT_SIZE
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QImage
+from PyQt5.QtGui import QPainter, QImage, QColor
 from PyQt5.QtWidgets import QWidget
 from utils import adobe_palette, freqToPx, notes, note_name
 
@@ -28,8 +28,11 @@ class Spectrogram(QWidget):
         p.drawImage(0, 0, im)
 
         # отрисовка нот
-        p.setPen(Qt.white)
-        for octave in range(2, 6):
+        pen_color = QColor(Qt.white)
+        pen_color.setAlpha(128)
+        p.setPen(pen_color)
+
+        for octave in range(0, 11):
             for i, note in enumerate(notes(octave)):
                 x = freqToPx(note, self.width())
                 p.drawLine(x, 30, x, self.height())
