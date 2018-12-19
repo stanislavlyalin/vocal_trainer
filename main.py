@@ -6,10 +6,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtGui import QPainter, QColor, QImage
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
-import pyaudio
-from array import array
-from threading import Thread
 import struct
+from recorder import Recorder
 
 SAMPLE_RATE = 4000
 LINES_PER_SECOND = 24
@@ -68,7 +66,6 @@ class Spectrogram(QWidget):
 
 
 CHUNK_SIZE = SAMPLE_RATE // LINES_PER_SECOND  # FFT_SIZE
-FORMAT = pyaudio.paInt16
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -86,50 +83,38 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.slider)
         self.layout.addWidget(self.startButton)
         self.setLayout(self.layout)
-        self.recording = False
+        
         self.buffer = np.zeros(FFT_SIZE)
+        self.setGeometry(200, 200, 500, 300)
+
+        self.recorder = Recorder(SAMPLE_RATE, CHUNK_SIZE, self.recorderData)
 
         self.startButton.clicked.connect(self.clicked)
 
     def updateCoef(self, val):
         self.coef = val * 0.1
 
+    def recorderData(self, data):
 
-    def microphoneReader(self):
-        while self.recording:
-            self.data = np.frombuffer(array('h', self.stream.read(CHUNK_SIZE)), dtype=np.int16).astype(float)
+        if not np.any(np.isnan(data)):
 
-            if not np.any(np.isnan(self.data)):
+            self.buffer = np.hstack((self.buffer[len(data):], data))
 
-                self.buffer = np.hstack((self.buffer[len(self.data):], self.data))
+            sp = 10 * np.log10(np.abs(np.fft.rfft(self.buffer * np.hamming(len(self.buffer)))))[:FFT_SIZE // 2]
+            sp *= self.coef
+            sp -= sp.min()
 
-                sp = 10 * np.log10(np.abs(np.fft.rfft(self.buffer * np.hamming(len(self.buffer)))))[:FFT_SIZE // 2]
-                sp *= self.coef
-                sp -= sp.min()
-
-                sp = np.clip(sp, 0, 255)
-                self.spectrogram.plot(sp.astype(np.uint8))
+            sp = np.clip(sp, 0, 255)
+            self.spectrogram.plot(sp.astype(np.uint8))
 
 
     def clicked(self):
-        self.recording = not self.recording
-        self.startButton.setText('Stop' if self.recording else 'Start')
-
-        if self.recording:
-            self.p = pyaudio.PyAudio()
-            self.data = array('h')
-            self.stream = self.p.open(format=FORMAT, channels=1, rate=8000,
-                        input=True, output=True,
-                        frames_per_buffer=CHUNK_SIZE)
-            self.thread = Thread(target=self.microphoneReader)
-            self.thread.start()
-            print('Start recording')
+        if self.recorder.recording:
+            self.recorder.stop()
         else:
-            self.thread.join()
-            self.stream.stop_stream()
-            self.stream.close()
-            self.p.terminate()
-            print('Stop recording')
+            self.recorder.start()
+
+        self.startButton.setText('Stop' if self.recorder.recording else 'Start')
 
 
 if __name__ == '__main__':
