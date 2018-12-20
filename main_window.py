@@ -3,6 +3,7 @@ import numpy as np
 from settings import SAMPLE_RATE, LINES_PER_SECOND, FFT_SIZE, CHUNK_SIZE
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QSlider
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from spectrogram import Spectrogram
 from recorder import Recorder
 from utils import mel, hz
@@ -11,6 +12,7 @@ from utils import mel, hz
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QIcon('icon.png'))
 
         self.spectrogram = Spectrogram()
         self.spectrogram.mouseMoved.connect(lambda f: self.setWindowTitle('Vocal Trainer - ' + '%.2f' % f + ' Hz'))
