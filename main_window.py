@@ -13,6 +13,7 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.spectrogram = Spectrogram()
+        self.spectrogram.mouseMoved.connect(lambda f: self.setWindowTitle('Vocal Trainer - ' + '%.2f' % f + ' Hz'))
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(10)
@@ -49,9 +50,9 @@ class MainWindow(QWidget):
             sp = 10 * np.log10(np.abs(np.fft.rfft(self.buffer * np.hamming(len(self.buffer)))))[:FFT_SIZE // 2]
             
             # преобразование в шкалу MEL
-            h = hz(np.arange(len(sp)) * mel(SAMPLE_RATE / 2) / (FFT_SIZE / 2))
-            sp_i = np.clip(np.round(h * (FFT_SIZE / 2) / (SAMPLE_RATE / 2)), 0, (FFT_SIZE // 2) - 1).astype(int)
-            sp = sp[sp_i]
+            # h = hz(np.arange(len(sp)) * mel(SAMPLE_RATE / 2) / (FFT_SIZE / 2))
+            # sp_i = np.clip(np.round(h * (FFT_SIZE / 2) / (SAMPLE_RATE / 2)), 0, (FFT_SIZE // 2) - 1).astype(int)
+            # sp = sp[sp_i]
 
             # нормализация
             sp *= self.coef

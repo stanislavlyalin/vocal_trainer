@@ -52,6 +52,9 @@ def note_name(index):
 def freqToPx(frequency, width):
     return frequency * width / (SAMPLE_RATE / 2)
 
+def pxToFreq(px, width):
+    return px * (SAMPLE_RATE / 2) / width
+
 def mel(hz):
     return 1127.01048 * np.log(1 + hz / 700)
 
